@@ -11,8 +11,7 @@ const client = new Client({
 const OWNER_ID = "1109183147968581713";
 const ROLE_ID = "1522929172123484282";
 
-const events = new Map(); // beter dan array
-const processed = new Set(); // voorkomt dubbele verwerking in 1 bot instance
+const events = new Map();
 
 client.once("clientReady", () => {
     console.log(`✅ ${client.user.tag} is online!`);
@@ -21,11 +20,8 @@ client.once("clientReady", () => {
 client.on("messageCreate", async (message) => {
     if (message.author.bot) return;
 
-    // 🧠 voorkomt dubbele verwerking van hetzelfde bericht
-    if (processed.has(message.id)) return;
-    processed.add(message.id);
-
-    const args = message.content.trim().split(/\s+/);
+    const content = message.content.trim();
+    const args = content.split(/\s+/);
     const cmd = args[0]?.toLowerCase();
 
     if (cmd === "!createevent") {
@@ -50,15 +46,15 @@ client.on("messageCreate", async (message) => {
             )
             .setTimestamp();
 
-        const sent = await message.channel.send({
+        const msg = await message.channel.send({
             content: `<@&${ROLE_ID}> 🎉 Nieuw event!`,
             embeds: [embed]
         });
 
-        await sent.react("✅");
-        await sent.react("❌");
+        await msg.react("✅");
+        await msg.react("❌");
 
-        events.set(sent.id, { name, date, time });
+        events.set(msg.id, { name, date, time });
 
         return;
     }
