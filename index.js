@@ -8,16 +8,16 @@ const client = new Client({
     ]
 });
 
-// 📦 events opslag (tijdelijk)
+// 📦 Events opslag (tijdelijk)
 let events = [];
 
-// 🔑 OWNER ID (vul hier je Discord ID in)
+// 🔒 Zet hier jouw Discord ID
 const OWNER_ID = "1109183147968581713";
 
-// 🔑 Role ID voor mentions
+// 📢 Role ID voor event mentions
 const roleId = "1522929172123484282";
 
-client.once('ready', () => {
+client.once('clientReady', () => {
     console.log(`✅ ${client.user.tag} is online!`);
 });
 
@@ -25,25 +25,23 @@ client.on('messageCreate', async (message) => {
 
     if (message.author.bot) return;
 
-    const args = message.content.split(' ');
+    const args = message.content.trim().split(/\s+/);
 
-    // 🎉 CREATE EVENT
+    // Alleen !createevent
     if (args[0] === '!createevent') {
 
-        // 🔒 OWNER CHECK
+        // 🔒 Alleen owner
         if (message.author.id !== OWNER_ID) {
             return message.reply("❌ Alleen de owner kan events aanmaken.");
         }
 
-        const params = args.slice(1);
-
-        if (params.length < 3) {
+        if (args.length < 4) {
             return message.reply("❌ Gebruik: !createevent <naam> <datum> <tijd>");
         }
 
-        const name = params[0];
-        const date = params[1];
-        const time = params[2];
+        const name = args[1];
+        const date = args[2];
+        const time = args[3];
 
         const embed = new EmbedBuilder()
             .setColor(0x00AEFF)
@@ -51,7 +49,7 @@ client.on('messageCreate', async (message) => {
             .addFields(
                 { name: "📅 Datum", value: date, inline: true },
                 { name: "⏰ Tijd", value: time, inline: true },
-                { name: "✅ RSVP", value: "Reageer met ✅ of ❌", inline: false }
+                { name: "✅ RSVP", value: "Reageer met ✅ of ❌" }
             )
             .setFooter({ text: "Pro Event Bot" })
             .setTimestamp();
@@ -64,19 +62,25 @@ client.on('messageCreate', async (message) => {
         await sent.react('✅');
         await sent.react('❌');
 
-        events.push({ name, date, time });
+        events.push({
+            name,
+            date,
+            time
+        });
+
+        return;
     }
 
-    // 📅 EVENTS LIJST
+    // 📅 Eventlijst
     if (args[0] === '!events') {
 
         if (events.length === 0) {
             return message.reply("❌ Geen events gevonden.");
         }
 
-        const list = events.map((e, i) =>
-            `${i + 1}. ${e.name} - ${e.date} ${e.time}`
-        ).join('\n');
+        const list = events
+            .map((e, i) => `${i + 1}. ${e.name} - ${e.date} ${e.time}`)
+            .join('\n');
 
         return message.channel.send(`📅 **Events:**\n\n${list}`);
     }
