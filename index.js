@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
 
 const client = new Client({
     intents: [
@@ -11,69 +11,70 @@ const client = new Client({
 const OWNER_ID = "1109183147968581713";
 const ROLE_ID = "1522929172123484282";
 
-let events = [];
+const events = [];
 
-client.once('clientReady', () => {
+client.once("clientReady", () => {
     console.log(`✅ ${client.user.tag} is online!`);
 });
 
-client.on('messageCreate', async (message) => {
+client.on("messageCreate", async (message) => {
     if (message.author.bot) return;
 
     const args = message.content.trim().split(/\s+/);
+    const command = args.shift()?.toLowerCase();
 
-    if (args[0] === "!createevent") {
+    switch (command) {
 
-        console.log(`!createevent ontvangen van ${message.author.tag}`);
+        case "!createevent": {
 
-        if (message.author.id !== OWNER_ID) {
-            return message.reply("❌ Alleen de owner kan events aanmaken.");
+            if (message.author.id !== OWNER_ID) {
+                return message.reply("❌ Alleen de owner kan events aanmaken.");
+            }
+
+            if (args.length < 3) {
+                return message.reply("❌ Gebruik: !createevent <naam> <datum> <tijd>");
+            }
+
+            const [name, date, time] = args;
+
+            const embed = new EmbedBuilder()
+                .setColor(0x00AEFF)
+                .setTitle(`🎉 ${name} Event`)
+                .addFields(
+                    { name: "📅 Datum", value: date, inline: true },
+                    { name: "⏰ Tijd", value: time, inline: true },
+                    { name: "✅ RSVP", value: "Reageer met ✅ of ❌" }
+                )
+                .setTimestamp();
+
+            const eventMessage = await message.channel.send({
+                content: `<@&${ROLE_ID}> 🎉 Nieuw event!`,
+                embeds: [embed]
+            });
+
+            await eventMessage.react("✅");
+            await eventMessage.react("❌");
+
+            events.push({ name, date, time });
+
+            break;
         }
 
-        if (args.length < 4) {
-            return message.reply("❌ Gebruik: !createevent <naam> <datum> <tijd>");
+        case "!events": {
+
+            if (events.length === 0) {
+                return message.reply("❌ Geen events gevonden.");
+            }
+
+            const list = events
+                .map((event, index) => `${index + 1}. ${event.name} - ${event.date} ${event.time}`)
+                .join("\n");
+
+            return message.channel.send(`📅 **Events:**\n\n${list}`);
         }
 
-        const name = args[1];
-        const date = args[2];
-        const time = args[3];
-
-        const embed = new EmbedBuilder()
-            .setColor(0x00AEFF)
-            .setTitle(`🎉 ${name} Event`)
-            .addFields(
-                { name: "📅 Datum", value: date, inline: true },
-                { name: "⏰ Tijd", value: time, inline: true },
-                { name: "✅ RSVP", value: "Reageer met ✅ of ❌" }
-            )
-            .setTimestamp();
-
-        console.log("Verstuur event...");
-
-        const sent = await message.channel.send({
-            content: `<@&${ROLE_ID}> 🎉 Nieuw event!`,
-            embeds: [embed]
-        });
-
-        await sent.react("✅");
-        await sent.react("❌");
-
-        events.push({ name, date, time });
-
-        console.log("Event verstuurd.");
-        return;
-    }
-
-    if (args[0] === "!events") {
-        if (events.length === 0) {
-            return message.reply("❌ Geen events gevonden.");
-        }
-
-        const list = events
-            .map((e, i) => `${i + 1}. ${e.name} - ${e.date} ${e.time}`)
-            .join("\n");
-
-        return message.channel.send(`📅 **Events:**\n\n${list}`);
+        default:
+            return;
     }
 });
 
